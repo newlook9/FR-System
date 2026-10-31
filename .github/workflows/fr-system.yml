@@ -30,8 +30,11 @@ jobs:
           SRC=/tmp/x
           if [ "$(ls -A /tmp/x | wc -l)" = "1" ] && [ -d "/tmp/x/$(ls -A /tmp/x)" ]; then SRC="/tmp/x/$(ls -A /tmp/x)"; fi
           rm -rf "$SRC/.github" "$SRC/data" "$SRC/.git"
+          # keep fonts already in the repo (the font is too big to ship in every zip)
+          rm -rf /tmp/keepfonts; if [ -d web/fonts ]; then cp -a web/fonts /tmp/keepfonts; fi
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github ! -name data ! -name '*.zip' -exec rm -rf {} +
           cp -a "$SRC"/. ./
+          if [ -d /tmp/keepfonts ]; then mkdir -p web/fonts; cp -an /tmp/keepfonts/. web/fonts/; fi
           rm -f ./*.zip
           git config user.name "fr-system-bot"
           git config user.email "bot@users.noreply.github.com"
