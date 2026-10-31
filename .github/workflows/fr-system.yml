@@ -1,0 +1,69 @@
+name: FR System
+
+# Upload a .zip to the repo root -> this unzips it into the repo (replacing old files).
+# The APK job below stays idle until the project has an android/ folder (Part 1b).
+on:
+  push:
+    paths: ['*.zip']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fr-system
+  cancel-in-progress: false
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip into repo
+        run: |
+          set -e
+          Z=$(ls -t *.zip 2>/dev/null | head -n1 || true)
+          if [ -z "$Z" ]; then echo "No zip file in repo root - nothing to do."; exit 0; fi
+          echo "Using $Z"
+          rm -rf /tmp/x && mkdir /tmp/x && unzip -q "$Z" -d /tmp/x
+          rm -rf /tmp/x/__MACOSX
+          SRC=/tmp/x
+          if [ "$(ls -A /tmp/x | wc -l)" = "1" ] && [ -d "/tmp/x/$(ls -A /tmp/x)" ]; then SRC="/tmp/x/$(ls -A /tmp/x)"; fi
+          rm -rf "$SRC/.github" "$SRC/data" "$SRC/.git"
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github ! -name data ! -name '*.zip' -exec rm -rf {} +
+          cp -a "$SRC"/. ./
+          rm -f ./*.zip
+          git config user.name "fr-system-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "No changes."; else git commit -m "Unzip $Z"; git push origin HEAD; fi
+
+  apk:
+    needs: unzip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Is there an Android project yet?
+        id: chk
+        run: |
+          if [ -f android/build.gradle ]; then echo "has=yes" >> "$GITHUB_OUTPUT"; else echo "has=no" >> "$GITHUB_OUTPUT"; echo "No android/ project yet - skipping APK."; fi
+      - uses: actions/setup-java@v4
+        if: steps.chk.outputs.has == 'yes'
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.chk.outputs.has == 'yes'
+        with: { gradle-version: '8.7' }
+      - name: Build APK
+        if: steps.chk.outputs.has == 'yes'
+        working-directory: android
+        run: gradle assembleDebug --no-daemon
+      - name: Publish APK as a release (easy phone download)
+        if: steps.chk.outputs.has == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk FR-System.apk
+          gh release delete latest-apk -y --cleanup-tag || true
+          gh release create latest-apk FR-System.apk --title "FR System APK" --notes "Latest Android build"
