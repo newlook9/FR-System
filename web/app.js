@@ -34,9 +34,9 @@ function signOut(expired) {
 
 const photoCache = new Map();
 async function loadPhotos() {
-  for (const el of document.querySelectorAll("[data-ph]")) {
-    const id = el.dataset.ph;
-    if (!photoCache.has(id)) photoCache.set(id, fetch("/api/photo/" + id, { headers: { Authorization: "Bearer " + S.token } }).then(r => r.ok ? r.blob() : null).then(b => b ? URL.createObjectURL(b) : null).catch(() => null));
+  for (const el of document.querySelectorAll("[data-ph],[data-img]")) {
+    const id = el.dataset.img || "/api/photo/" + el.dataset.ph;
+    if (!photoCache.has(id)) photoCache.set(id, fetch(id, { headers: { Authorization: "Bearer " + S.token } }).then(r => r.ok ? r.blob() : null).then(b => b ? URL.createObjectURL(b) : null).catch(() => null));
     const u = await photoCache.get(id); if (u) el.style.backgroundImage = `url(${u})`;
   }
 }
@@ -49,7 +49,7 @@ const val = id => $("#" + id).value;
 
 function shell(active, inner) {
   const u = S.user, adm = u.role === "admin";
-  const nav = [["dashboard", "dashboard"], ["persons", "persons"], ...(adm ? [["users", "users"], ["audit", "audit"]] : []), ["settings", "settings"]];
+  const nav = [["dashboard", "dashboard"], ["persons", "persons"], ...(u.role !== "viewer" ? [["facesearch", "facesearch"]] : []), ["events", "events"], ...(adm ? [["users", "users"], ["audit", "audit"]] : []), ["settings", "settings"]];
   $("#app").innerHTML = `<div class="shell"><nav class="side" aria-label="Main">
     <div class="brand"><img src="logo.svg" alt=""><span>${esc(t("app"))}</span></div>
     ${nav.map(([h, k]) => `<a href="#/${h}" class="${h === active ? "on" : ""}">${esc(t(k))}</a>`).join("")}
@@ -96,7 +96,8 @@ async function viewDashboard() {
   shell("dashboard", `<div class="bar"><h1>${esc(t("dashboard"))}</h1>${canEdit() ? `<a class="btn" href="#/person/new">${esc(t("add_person"))}</a>` : ""}</div>
   <div class="grid g4"><div class="card stat"><b class="num">${d.total}</b><span>${esc(t("total_records"))}</span></div>
   <div class="card stat w"><b class="num">${w}</b><span>${esc(t("wanted"))} / ${esc(t("absconder"))}</span></div>
-  <div class="card stat"><b class="num">${d.cases}</b><span>${esc(t("total_cases"))}</span></div></div>
+  <div class="card stat"><b class="num">${d.cases}</b><span>${esc(t("total_cases"))}</span></div>
+  <a class="card stat w" href="#/events" style="text-decoration:none"><b class="num">${d.new_events}</b><span>${esc(t("new_events"))}</span></a></div>
   <div class="grid g2" style="margin-top:14px">
   <div class="card"><h2>${esc(t("hearings"))}</h2>${d.hearings.length ? `<div class="list" style="margin-top:10px">${d.hearings.map(h => `<a class="item" href="#/person/${h.pid}"><div class="t"><b>${esc(h.name)}</b><br><small>FIR <span class="num">${esc(h.fir_no)}</span> · ${esc(h.court)}</small></div><span class="num">${esc(h.next_hearing)}</span></a>`).join("")}</div>` : `<p class="empty">${esc(t("no_hearings"))}</p>`}</div>
   <div class="card"><h2>${esc(t("recent"))}</h2>${d.recent.length ? `<div class="list" style="margin-top:10px">${d.recent.map(p => `<a class="item" href="#/person/${p.id}">${ph(p)}<div class="t"><b>${esc(p.name)}</b><br><small class="num">${esc(p.cnic)}</small></div>${tag(p.status)}</a>`).join("")}</div>` : `<p class="empty">${esc(t("no_results"))}</p>`}</div></div>`);
@@ -146,7 +147,7 @@ async function viewPersonForm(id) {
   $("#f").onsubmit = async e => {
     e.preventDefault();
     const b = {}; ["name", "father_name", "alias", "cnic", "dob", "gender", "status", "phone", "height", "address", "marks", "notes"].forEach(k => b[k] = val(k)); if (photo) b.photo = photo;
-    try { const r = id ? await api("PUT", "/persons/" + id, b) : await api("POST", "/persons", b); photoCache.delete(String(id || r.id)); toast(t("saved")); location.hash = "#/person/" + (id || r.id); }
+    try { const r = id ? await api("PUT", "/persons/" + id, b) : await api("POST", "/persons", b); photoCache.delete("/api/photo/" + (id || r.id)); toast(r.face === "no_face" ? t("no_face") : t("saved"), r.face === "no_face"); location.hash = "#/person/" + (id || r.id); }
     catch (x) { $("#e").textContent = errMsg(x); }
   };
 }
@@ -155,7 +156,7 @@ async function viewPerson(id) {
   const p = await api("GET", "/persons/" + id);
   const rows = [["father_name", p.father_name], ["alias", p.alias], ["cnic", p.cnic], ["dob", p.dob], ["gender", p.gender ? t(p.gender) : ""], ["phone", p.phone], ["height", p.height], ["address", p.address], ["marks", p.marks], ["notes", p.notes]].filter(r => r[1]);
   shell("persons", `<div class="bar"><h1>${esc(p.name)}</h1>${canEdit() ? `<div class="row"><a class="btn alt" href="#/person/${id}/edit">${esc(t("edit"))}</a><button class="btn bad" id="arch">${esc(t("archive"))}</button></div>` : ""}</div>
-  <div class="card row" style="align-items:flex-start;gap:20px">${ph(p, "lg")}<div style="flex:1;min-width:240px">${tag(p.status)}<dl class="kv" style="margin-top:10px">${rows.map(([k, v]) => `<dt>${esc(t(k))}</dt><dd class="${k === "cnic" || k === "phone" || k === "dob" ? "num" : ""}">${esc(v)}</dd>`).join("")}</dl></div></div>
+  <div class="card row" style="align-items:flex-start;gap:20px">${ph(p, "lg")}<div style="flex:1;min-width:240px">${tag(p.status)} <span class="tag" style="color:var(--mute)">${esc(t(p.face_enrolled ? "face_ok" : "face_none"))}</span><dl class="kv" style="margin-top:10px">${rows.map(([k, v]) => `<dt>${esc(t(k))}</dt><dd class="${k === "cnic" || k === "phone" || k === "dob" ? "num" : ""}">${esc(v)}</dd>`).join("")}</dl></div></div>
   <div class="bar" style="margin-top:22px"><h2>${esc(t("cases"))}</h2>${canEdit() ? `<a class="btn" href="#/person/${id}/case">${esc(t("add_case"))}</a>` : ""}</div>
   ${p.cases.length ? `<div class="grid">${p.cases.map(c => `<div class="card"><div class="row" style="justify-content:space-between"><b>FIR <span class="num">${esc(c.fir_no)}</span></b><span class="tag">${esc(t(c.status))}</span></div>
   <dl class="kv" style="margin-top:8px">${[["police_station", c.police_station], ["fir_date", c.fir_date], ["sections", c.sections], ["location", c.location], ["court", c.court], ["next_hearing", c.next_hearing], ["details", c.details]].filter(r => r[1]).map(([k, v]) => `<dt>${esc(t(k))}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
@@ -178,6 +179,37 @@ async function viewCaseForm(pid, cid) {
   const body = () => { const b = {}; ["fir_no", "fir_date", "police_station", "sections", "location", "status", "court", "next_hearing", "details"].forEach(k => b[k] = val(k)); return b; };
   $("#f").onsubmit = async e => { e.preventDefault(); try { cid ? await api("PUT", "/cases/" + cid, body()) : await api("POST", `/persons/${pid}/cases`, body()); toast(t("saved")); location.hash = "#/person/" + pid; } catch (x) { $("#e").textContent = errMsg(x); } };
   if ($("#del")) $("#del").onclick = async () => { if (confirm(t("confirm_archive"))) { await api("DELETE", "/cases/" + cid); location.hash = "#/person/" + pid; } };
+}
+
+
+const pct = v => Math.round(v * 100) + "%";
+async function viewFaceSearch() {
+  const st = await api("GET", "/face/status");
+  shell("facesearch", `<div class="bar"><h1>${esc(t("face_search"))}</h1></div><div class="card"><p style="margin-top:0">${esc(t("match_lead"))}</p>
+  ${st.available ? `<label for="fp">${esc(t("choose_photo"))}</label><input id="fp" type="file" accept="image/*"><div id="fr" class="list" style="margin-top:14px"></div>` : `<p class="err">${esc(t("face_off"))}</p>`}</div>`);
+  if (!st.available) return;
+  $("#fp").onchange = async e => {
+    try {
+      const r = await api("POST", "/face/search", { photo: await resizePhoto(e.target.files[0]) });
+      $("#fr").innerHTML = r.length ? r.map(x => `<a class="item" href="#/person/${x.id}">${ph(x)}<div class="t"><b>${esc(x.name)}</b> <small>${esc(x.father_name)}</small><br><small class="num">${esc(x.cnic)}</small><br>
+        <small style="color:${x.strong ? "var(--red)" : "var(--mute)"}">${esc(t("score"))} <span class="num">${pct(x.score)}</span> - ${esc(t(x.strong ? "strong" : "weak"))}</small></div>${tag(x.status)}</a>`).join("") : `<div class="empty">${esc(t("no_results"))}</div>`;
+      loadPhotos();
+    } catch (x) { $("#fr").innerHTML = `<div class="err" role="alert">${esc(errMsg(x))}</div>`; }
+  };
+}
+
+async function viewEvents() {
+  const ev = await api("GET", "/events");
+  shell("events", `<div class="bar"><h1>${esc(t("events"))}</h1></div><p>${esc(t("match_lead"))}</p>
+  ${ev.length ? `<div class="grid">${ev.map(e => `<div class="card"><div class="row" style="align-items:flex-start">
+    <div><small>${esc(t("snapshot"))}</small><div class="ph lg" data-img="/api/event_photo/${e.id}"></div></div>
+    <div><small>${esc(t("record"))}</small>${ph({ id: e.person_id, has_photo: e.has_photo }, "lg")}</div>
+    <div style="flex:1;min-width:200px"><a href="#/person/${e.person_id}"><b>${esc(e.name)}</b></a> ${tag(e.pstatus)}
+    <p style="margin:6px 0">${esc(t("camera"))}: ${esc(e.camera_name)}<br><span class="num">${fmtTs(e.ts)}</span><br>${esc(t("score"))}: <span class="num">${pct(e.score)}</span></p>
+    ${e.status === "new" && canEdit() ? `<div class="row"><button class="btn sm" data-v="confirmed" data-i="${e.id}">${esc(t("confirm"))}</button><button class="btn alt sm" data-v="false" data-i="${e.id}">${esc(t("false_match"))}</button></div>`
+      : `<span class="tag">${esc(t(e.status))}${e.reviewed_by ? " - " + esc(e.reviewed_by) : ""}</span>`}</div></div></div>`).join("")}</div>` : `<div class="empty">${esc(t("no_events"))}</div>`}`);
+  loadPhotos();
+  document.querySelectorAll("[data-v]").forEach(b => b.onclick = async () => { try { await api("POST", `/events/${b.dataset.i}/review`, { verdict: b.dataset.v }); viewEvents(); } catch (x) { toast(errMsg(x), true); } });
 }
 
 async function viewUsers() {
@@ -204,9 +236,11 @@ function viewSettings() {
   shell("settings", `<div class="bar"><h1>${esc(t("settings"))}</h1></div><div class="card form" style="max-width:520px">
   <div class="full"><label for="l">${esc(t("language"))}</label><select id="l"><option value="ur" ${S.lang === "ur" ? "selected" : ""}>اردو</option><option value="en" ${S.lang === "en" ? "selected" : ""}>English</option></select></div>
   <div class="full"><a class="btn alt" href="#/password">${esc(t("change_password"))}</a></div>
+  ${S.user.role === "admin" ? `<div class="full"><button class="btn alt" id="enr">${esc(t("enroll_all"))}</button></div>` : ""}
   ${window.Android && Android.changeServer ? `<div class="full"><button class="btn alt" id="srv">${esc(t("change_server"))}</button></div>` : ""}</div>`);
   $("#l").onchange = e => { setLang(e.target.value); viewSettings(); };
   if ($("#srv")) $("#srv").onclick = () => Android.changeServer();
+  if ($("#enr")) $("#enr").onclick = async () => { try { const r = await api("POST", "/face/enroll_all"); toast(t("saved") + ": " + r.enrolled); } catch (x) { toast(errMsg(x), true); } };
 }
 
 /* ---------- router ---------- */
@@ -225,6 +259,8 @@ async function route() {
     if (a === "person" && c === "edit") return viewPersonForm(b);
     if (a === "person" && c === "case") return viewCaseForm(b, d);
     if (a === "person") return viewPerson(b);
+    if (a === "facesearch") return canEdit() ? viewFaceSearch() : (location.hash = "#/dashboard");
+    if (a === "events") return viewEvents();
     if (a === "users") return viewUsers();
     if (a === "audit") return viewAudit();
     if (a === "settings") return viewSettings();

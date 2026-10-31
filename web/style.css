@@ -1,4 +1,4 @@
-@font-face{font-family:"Jameel Noori Nastaleeq";src:url(fonts/JameelNooriNastaleeq.woff) format("woff");font-display:swap}
+@font-face{font-family:"Jameel Noori Nastaleeq";src:url(fonts/JameelNooriNastaleeq.woff) format("woff"),url(fonts/Jameel_Noori_Nastaleeq.ttf) format("truetype");font-display:swap}
 :root{--navy:#13294B;--navy2:#1d3a68;--gold:#C9A24A;--teal:#0F7B7B;--paper:#F3F4F6;--card:#fff;--ink:#1B2433;--mute:#5d6678;--line:#d9dde5;--red:#B3261E;--green:#1E7A46;--amber:#9A6A00;--r:6px}
 *{box-sizing:border-box}
 html{font-size:16px}

@@ -17,7 +17,11 @@ when:"Time", who:"User", action:"Action", target:"Target", server:"Server addres
 bad_login:"Wrong username or password.", locked:"Too many attempts. Try again in 10 minutes.", forbidden:"Your role cannot do this.", auth:"Session ended. Please sign in again.",
 name_required:"Name is required.", cnic_invalid:"CNIC must be 13 digits.", fir_required:"FIR number is required.", photo_invalid:"Photo could not be used.",
 pw_short:"Password must be at least 8 characters.", pw_wrong:"Current password is wrong.", user_invalid:"Check username (3-30 letters/digits), name, role and password.", user_exists:"That username already exists.",
-not_found:"Not found.", server_err:"Server error. Try again.", net:"Cannot reach the server."
+facesearch:"Face search", events:"Detections", face_search:"Search by face", face_off:"Face recognition is not installed on the server.", no_face:"No clear face found in this photo.",
+face_ok:"Face enrolled", face_none:"No face data", new_events:"New detections", no_events:"No detections yet.", camera:"Camera", score:"Match", confirm:"Confirm match", false_match:"False match",
+new:"New", confirmed:"Confirmed", false:"False match", strong:"Strong match - verify identity", weak:"Weak - probably a different person", snapshot:"Camera", record:"Record",
+match_lead:"A face match is only a lead, not proof. Always verify identity (CNIC, in person) before any action.",
+enroll_all:"Build face data for all saved photos",not_found:"Not found.", server_err:"Server error. Try again.", net:"Cannot reach the server."
 },
 ur:{
 app:"ایف آر سسٹم", tag:"مجرمانہ ریکارڈ اور چہرہ شناخت الرٹ", login:"لاگ اِن", username:"صارف نام", password:"پاس ورڈ", logout:"لاگ آؤٹ",
@@ -37,5 +41,9 @@ when:"وقت", who:"صارف", action:"عمل", target:"ہدف", server:"سرو�
 bad_login:"صارف نام یا پاس ورڈ غلط ہے۔", locked:"بہت زیادہ کوششیں۔ 10 منٹ بعد دوبارہ کوشش کریں۔", forbidden:"آپ کے کردار کو اس کی اجازت نہیں۔", auth:"سیشن ختم ہو گیا۔ دوبارہ لاگ اِن کریں۔",
 name_required:"نام لازمی ہے۔", cnic_invalid:"شناختی کارڈ 13 ہندسوں کا ہونا چاہیے۔", fir_required:"FIR نمبر لازمی ہے۔", photo_invalid:"یہ تصویر استعمال نہیں ہو سکی۔",
 pw_short:"پاس ورڈ کم از کم 8 حروف کا ہو۔", pw_wrong:"موجودہ پاس ورڈ غلط ہے۔", user_invalid:"صارف نام (3 تا 30 حروف/ہندسے)، نام، کردار اور پاس ورڈ دیکھیں۔", user_exists:"یہ صارف نام پہلے سے موجود ہے۔",
-not_found:"نہیں ملا۔", server_err:"سرور میں خرابی۔ دوبارہ کوشش کریں۔", net:"سرور سے رابطہ نہیں ہو سکا۔"
+facesearch:"چہرے سے تلاش", events:"شناخت الرٹس", face_search:"چہرے سے تلاش کریں", face_off:"سرور پر چہرہ شناخت انسٹال نہیں ہے۔", no_face:"اس تصویر میں واضح چہرہ نہیں ملا۔",
+face_ok:"چہرے کا ڈیٹا موجود", face_none:"چہرے کا ڈیٹا نہیں", new_events:"نئی شناختیں", no_events:"ابھی کوئی شناخت نہیں ہوئی۔", camera:"کیمرہ", score:"مماثلت", confirm:"مماثلت درست", false_match:"غلط مماثلت",
+new:"نیا", confirmed:"تصدیق شدہ", false:"غلط مماثلت", strong:"مضبوط مماثلت - شناخت کی تصدیق کریں", weak:"کمزور - غالباً کوئی اور شخص", snapshot:"کیمرہ", record:"ریکارڈ",
+match_lead:"چہرے کی مماثلت صرف ایک اشارہ ہے، ثبوت نہیں۔ کسی بھی کارروائی سے پہلے شناخت (شناختی کارڈ، بالمشافہ) ضرور جانچیں۔",
+enroll_all:"تمام محفوظ تصاویر سے چہرے کا ڈیٹا بنائیں",not_found:"نہیں ملا۔", server_err:"سرور میں خرابی۔ دوبارہ کوشش کریں۔", net:"سرور سے رابطہ نہیں ہو سکا۔"
 }};

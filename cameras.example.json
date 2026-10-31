@@ -1,0 +1,4 @@
+[
+  {"id": "cam-bus-stand-1", "name": "Bus Stand Gate", "source": "rtsp://user:password@192.168.1.50:554/stream1"},
+  {"id": "cam-test", "name": "Laptop webcam (test)", "source": 0}
+]
